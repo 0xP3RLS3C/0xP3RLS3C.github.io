@@ -1,0 +1,45 @@
+<div class="section-divider"><hr class="section-divider" /></div>
+<div class="section-content">
+<div class="section-inner sectionLayout--insetColumn">
+<h3 class="graf graf--h3">WinAPI, and &ldquo;Cheap&rdquo; Malware Analysis Using AI &mdash; Part&nbsp;2</h3>
+<p class="graf graf--p">This is a follow-up blog to <a class="markup--anchor markup--p-anchor" href="https://medium.com/@perliftach/winapi-and-cheap-malware-analysis-using-ai-part-1-69e4a8fc8328" target="_blank" data-href="https://medium.com/@perliftach/winapi-and-cheap-malware-analysis-using-ai-part-1-69e4a8fc8328"><strong class="markup--strong markup--p-strong">WinAPI, and &ldquo;Cheap&rdquo; Malware Analysis Using AI &mdash; Part 1</strong></a>,and builds on the subjects discussed there &mdash; I strongly suggest you review it before proceeding.</p>
+</div>
+</div>
+<div class="section-divider"><hr class="section-divider" /></div>
+<div class="section-content">
+<div class="section-inner sectionLayout--insetColumn">
+<p class="graf graf--p">In the first part of this paper, we have gone through the basics of WinAPI and its functionalities.&nbsp;<br />This part is going to delve even deeper into a section in the PE file called the &ldquo;Import Address Table&rdquo;.&nbsp;<br />After learning about that, we can utilize our newly acquired knowledge for malware analysis, using a tool called &ldquo;IATelligence&rdquo;.</p>
+<h3 class="graf graf--h3"><strong class="markup--strong markup--h3-strong">The Import Address&nbsp;Table</strong></h3>
+<blockquote class="graf graf--blockquote"><strong class="markup--strong markup--blockquote-strong">Before we define that term, we need to understand what a DLL is:</strong><br />The DLL is a file (which format is PE), that serve as a shared library. DLL&rsquo;s can contain code, data or resources.<br />DLLs are an excellent way to improve memory efficiency on Windows, and enables developers to use the built-in functions without repeating many lines of code.<br />In our case, the DLL is the container which stores the API functions code. Once a program is loaded, it will take the functions it needs from the relevant DLL.</blockquote>
+<p class="graf graf--p">Now that we know what a DLL is, let&rsquo;s talk about the Import Address Table:<br />The import address table is the part of the Windows PE executable file format that records the addresses of functions imported from other DLLs.</p>
+<p class="graf graf--p">For example, if your program calls <code class="markup--code markup--p-code">Get&shy;System&shy;Info()</code>, then the executable will have an entry in its import table that says, &ldquo;I would like to be able to call the function <code class="markup--code markup--p-code">Get&shy;System&shy;Info()</code> from <code class="markup--code markup--p-code">kernel32.dll</code>.&rdquo;&nbsp;<br />When the module is loaded, the system goes and finds that function, obtains its address, and stores it in a table known as the Import Address Table (IAT). When the module needs to call the <code class="markup--code markup--p-code">Get&shy;System&shy;Info()</code> function, it does so by fetching the value from the Import Address Table and calling it.</p>
+<p class="graf graf--p">For a deeper dive into the anatomy of the IAT, refer to <a class="markup--anchor markup--p-anchor" href="http://sandsprite.com/CodeStuff/Understanding_imports.html" rel="noopener" target="_blank" data-href="http://sandsprite.com/CodeStuff/Understanding_imports.html">this</a> paper.</p>
+<img class="graf-image" src="https://cdn-images-1.medium.com/max/900/1*47HhnrozjVc5oUQKXAI8MQ.png" alt="" data-image-id="1*47HhnrozjVc5oUQKXAI8MQ.png" data-width="862" data-height="443" data-is-featured="true" />A representation of the&nbsp;IAT
+<h3 class="graf graf--h3">Finally, malware&nbsp;analysis</h3>
+<p class="graf graf--p">Now that we got all the knowledge required, let&rsquo;s put this into practice:</p>
+<p class="graf graf--p">Meet IATelligence, a Python script that extracts the IAT of a PE (executable) file and then retrieves information about each function from ChatGPT.</p>
+<div class="graf graf--mixtapeEmbed"><a class="markup--anchor markup--mixtapeEmbed-anchor" title="https://github.com/fr0gger/IATelligence" href="https://github.com/fr0gger/IATelligence" data-href="https://github.com/fr0gger/IATelligence"><strong class="markup--strong markup--mixtapeEmbed-strong">GitHub - fr0gger/IATelligence: IATelligence is a Python script that will extract the IAT of a PE&hellip;</strong><br /><em class="markup--em markup--mixtapeEmbed-em">IATelligence is a Python script that will extract the IAT of a PE file and request GPT to get more information about&hellip;</em>github.com</a></div>
+<p class="graf graf--p">For those of you living under a rock, ChatGPT is a chatbot developed by OpenAI and built on top of the GPT3.5 AI model.<br />In recent months, ChatGPT went extremely popular, proving very resourceful across many fields (including infosec).</p>
+<p class="graf graf--p">You can try ChatGPT <a class="markup--anchor markup--p-anchor" href="https://chat.openai.com/" rel="noopener" target="_blank" data-href="https://chat.openai.com/">here</a>.</p>
+<p class="graf graf--p">In our context, ChatGPT will help us retrieve useful information about each and every WinAPI function that IATelligence found in the analyzed file.<br />That way, we can learn about the characteristics of a given binary.</p>
+<h3 class="graf graf--h3">IATelligence in&nbsp;action</h3>
+<p class="graf graf--p">IATelligence can come in handy as part of an initial triage process, as part of a forensic investigation, or even purely as an educational exercise.</p>
+<p class="graf graf--p">Here are examples of some real malware that I analyzed with IATelligence&nbsp;:</p>
+<p class="graf graf--p"><strong class="markup--strong markup--p-strong"><em class="markup--em markup--p-em">Redline</em></strong></p>
+<p class="graf graf--p">Redline Stealer is a popular malware variant that can be bought for personal use, which made it very common to come across.<br />As seen below, the results contain the <strong class="markup--strong markup--p-strong">_lread</strong> function, which description fits with the goals of a stealer malware.</p>
+<img class="graf-image" src="https://cdn-images-1.medium.com/max/900/1*9nIq6N3hJOpb-MSvgGdTYQ.png" alt="" data-image-id="1*9nIq6N3hJOpb-MSvgGdTYQ.png" data-width="793" data-height="605" />
+<p class="graf graf--p"><strong class="markup--strong markup--p-strong"><em class="markup--em markup--p-em">Agent Tesla</em></strong></p>
+<p class="graf graf--p">The functions displayed below can pretty much confirm that this malware abuse the registry in order to achieve persistence on its victim.</p>
+<img class="graf-image" src="https://cdn-images-1.medium.com/max/900/1*-623Rxiy-Y4N86Qj0asbTQ.png" alt="" data-image-id="1*-623Rxiy-Y4N86Qj0asbTQ.png" data-width="698" data-height="582" />
+<p class="graf graf--p"><strong class="markup--strong markup--p-strong"><em class="markup--em markup--p-em">Ryuk Ransomware</em></strong></p>
+<p class="graf graf--p">Judging by the functions below, this Ryuk sample I've analyzed will probably communicate with a C2C server over the application layer protocols. Also, the bind() function may indicate that the malware is attempting to move laterally across the network.</p>
+<img class="graf-image" src="https://cdn-images-1.medium.com/max/900/1*vz0H3gdrJWsSBc9xNpPoqA.png" alt="" data-image-id="1*vz0H3gdrJWsSBc9xNpPoqA.png" data-width="797" data-height="855" />
+<p class="graf graf--p">Once we get an initial assessment of the functions that the sample used, we have a better starting point for our forensic investigation.</p>
+<h3 class="graf graf--h3"><strong class="markup--strong markup--h3-strong">AI &amp; information Security</strong></h3>
+<p class="graf graf--p">In the future, ChatGPT and AI in general will provide us with many security solutions and creative tools that will join the analyst toolkit.<br />On the other hand, it will also help attackers with their goals, making offensive engagements more dangerous and potentially harmful.</p>
+<p class="graf graf--p">The presence of AI must not allow security analysts to succumb into laziness. One common misconception is that AI will make all the work for us &mdash; the opposite is true&nbsp;:</p>
+<blockquote class="graf graf--blockquote graf--startsWithDoubleQuote">&ldquo;Some people call this artificial intelligence, but the reality is this technology will enhance us. So instead of artificial intelligence, I think we&rsquo;ll augment our intelligence.&rdquo; &mdash; Ginni Rometty</blockquote>
+<p class="graf graf--p">AI is a groundbreaking field, and I&rsquo;m excited that we&rsquo;re here to witness its integration with traditional professions &mdash; in what I believe will be one of the biggest leaps for mankind.<br />Instead of fearing the change and shunning it &mdash; welcome it!<br />Experiment, test, integrate, and create new things.</p>
+<p class="graf graf--p">Exciting times ahead.</p>
+</div>
+</div>
